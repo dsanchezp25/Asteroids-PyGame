@@ -1,4 +1,4 @@
-import pygame, sys, os, random, math
+import math, os, pygame, random, sys
 from pygame.locals import *
 
 pygame.init()
@@ -23,15 +23,28 @@ pygame.display.set_caption('Asteroids')
 bg = pygame.image.load(os.path.join('images', 'bg.jpg'))
 debris = pygame.image.load(os.path.join('images', 'debris2_brown.png'))
 ship = pygame.image.load(os.path.join('images', 'ship.png'))
-ship_thrust = pygame.image.load(os.path.join('images', 'ship_thrusted.png'))
+ship_thrusted = pygame.image.load(os.path.join('images', 'ship_thrusted.png'))
+asteroids = pygame.image.load(os.path.join('images', 'asteroid.png'))
 
 ship_x = WIDTH / 2 - 50
 ship_y = HEIGHT / 2 - 50
-ship_angle = 90
+ship_angle = 0
 ship_is_rotating = False
 ship_is_forward = False
 ship_direction = 0
 ship_speed = 0
+distance: float = 0.0
+
+asteroid_x = []
+asteroid_y = []
+asteroid_speed = 2
+asteroid_angle = []
+num_asteroids = 5
+
+for i in range(0, num_asteroids):
+    asteroid_x.append(random.randint(0, WIDTH))
+    asteroid_y.append(random.randint(0, HEIGHT))
+    asteroid_angle.append(random.randint(0, 365))
 
 
 # rot_center function
@@ -55,11 +68,16 @@ def draw(canvas):
     canvas.blit(debris, (time * .3, 0))
     canvas.blit(debris, (time * .3 - WIDTH, 0))
     time += 1
-    canvas.blit(rot_center(ship, ship_angle), (ship_x, ship_y))
+
+    for i in range(0, num_asteroids):
+        canvas.blit(rot_center(asteroids, time), (asteroid_x[i], asteroid_y[i]))
+
     if ship_is_forward:
-        canvas.blit(rot_center(ship_thrust, ship_angle), (ship_x, ship_y))
+        canvas.blit(rot_center(ship_thrusted, ship_angle), (ship_x, ship_y))
     else:
         canvas.blit(rot_center(ship, ship_angle), (ship_x, ship_y))
+
+
 # handle_input function
 def handle_input():
     global ship_angle, ship_is_rotating, ship_direction
@@ -76,7 +94,7 @@ def handle_input():
             elif event.key == K_LEFT:
                 ship_is_rotating = True
                 ship_direction = 1
-            elif event.type == K_UP:
+            elif event.key == K_UP:
                 ship_is_forward = True
                 ship_speed = 10
 
@@ -96,17 +114,46 @@ def handle_input():
         ship_x = (ship_x + math.cos(math.radians(ship_angle)) * ship_speed)
         ship_y = (ship_y + -math.sin(math.radians(ship_angle)) * ship_speed)
         if not ship_is_forward:
-            ship_speed -= 0.2
+            ship_speed = ship_speed - 0.2
 
-# upadate_screen function
+
+# update_screen function
 def update_screen():
     pygame.display.update()
     fps.tick(60)
 
 
+# isCollision function
+def isCollision(enemyX, enemyY, bulletX, bulletY):
+    distance == math.sqrt(math.pow(enemyX - bulletX, 2) + (math.pow(enemyY + bulletY, 2)))
+    if distance < 27: return True
+    else: return False
+
+# game_logic function
+def game_logic():
+    for i in range(0, num_asteroids):
+        asteroid_x[i] = (asteroid_x[i] + math.cos(math.radians(asteroid_angle[i])) * asteroid_speed)
+        asteroid_y[i] = (asteroid_y[i] + -math.sin(math.radians(asteroid_angle[i])) * asteroid_speed)
+
+        if asteroid_y[i] < 0:
+            asteroid_y[i] = HEIGHT
+
+        if asteroid_x[i] > HEIGHT:
+            asteroid_y[i] = 0
+
+        if asteroid_x[i] < 0:
+            asteroid_x[i] = WIDTH
+
+        if asteroid_x[i] > WIDTH:
+            asteroid_x[i] = 0
+
+        if isCollision(ship_x, ship_y, asteroid_x[i], asteroid_y[i]):
+            print('Game over Machine')
+            exit()
+
 # asteroids game loop
 while True:
     draw(window)
     handle_input()
-    # game_logic()
+    game_logic()
     update_screen()
